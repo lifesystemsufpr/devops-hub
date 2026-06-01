@@ -1,0 +1,16 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  ci:
+    uses: lifesystemsufpr/devops-hub/.github/workflows/ci-kotlin.yml@main
+    with:
+      jdk-version: '17'
+      coverage-threshold: 30
+      run-instrumented: false
+    secrets: inherit

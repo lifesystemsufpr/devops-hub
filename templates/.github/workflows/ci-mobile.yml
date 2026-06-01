@@ -1,0 +1,17 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  ci:
+    uses: lifesystemsufpr/devops-hub/.github/workflows/ci-node-mobile.yml@main
+    with:
+      node-version: '22'
+      package-manager: 'pnpm'
+      coverage-threshold: 30
+      expo: true
+    secrets: inherit

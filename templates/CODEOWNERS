@@ -1,0 +1,20 @@
+# CODEOWNERS — sincronizado a partir do devops-hub
+# Cada PR é automaticamente atribuído ao owner do path tocado.
+# Sintaxe: <path> <owners...>
+
+# Default: equipe core revisa qualquer mudança
+*                               @lifesystemsufpr/core
+
+# CI / DevOps — só devops mexe sem revisão de produto
+.github/                        @lifesystemsufpr/devops
+.github/workflows/              @lifesystemsufpr/devops
+CODEOWNERS                      @lifesystemsufpr/devops
+
+# Dependências precisam de review extra
+package.json                    @lifesystemsufpr/core @lifesystemsufpr/devops
+pnpm-lock.yaml                  @lifesystemsufpr/devops
+package-lock.json               @lifesystemsufpr/devops
+yarn.lock                       @lifesystemsufpr/devops
+build.gradle*                   @lifesystemsufpr/devops
+settings.gradle*                @lifesystemsufpr/devops
+gradle/                         @lifesystemsufpr/devops

@@ -1,0 +1,27 @@
+{
+  "name": "@lifesystemsufpr/devops-hub",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Plataforma central de CI/CD, governança e métricas para os repos da org lifesystemsufpr.",
+  "type": "module",
+  "scripts": {
+    "bootstrap": "tsx scripts/bootstrap-repo.ts",
+    "bootstrap:dry": "DRY_RUN=1 tsx scripts/bootstrap-repo.ts",
+    "protect": "tsx scripts/sync-branch-protection.ts",
+    "protect:dry": "DRY_RUN=1 tsx scripts/sync-branch-protection.ts",
+    "lint": "eslint scripts --ext .ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@octokit/rest": "^21.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "eslint": "^9.16.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

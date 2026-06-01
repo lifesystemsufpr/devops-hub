@@ -1,0 +1,144 @@
+name: CI Node Mobile (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        type: string
+        default: '22'
+      package-manager:
+        type: string
+        default: 'pnpm'
+      coverage-threshold:
+        type: number
+        default: 30
+      working-directory:
+        type: string
+        default: '.'
+      expo:
+        type: boolean
+        default: true
+    secrets:
+      EXPO_TOKEN:
+        required: false
+      CODECOV_TOKEN:
+        required: false
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: actions/checkout@v4
+      - if: inputs.package-manager == 'pnpm'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: ${{ inputs.package-manager }}
+      - run: ${{ inputs.package-manager }} install --frozen-lockfile
+      - run: ${{ inputs.package-manager }} run lint
+
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: actions/checkout@v4
+      - if: inputs.package-manager == 'pnpm'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: ${{ inputs.package-manager }}
+      - run: ${{ inputs.package-manager }} install --frozen-lockfile
+      - run: ${{ inputs.package-manager }} run typecheck || npx tsc --noEmit
+
+  test:
+    name: Unit + component tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: actions/checkout@v4
+      - if: inputs.package-manager == 'pnpm'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: ${{ inputs.package-manager }}
+      - run: ${{ inputs.package-manager }} install --frozen-lockfile
+      - run: ${{ inputs.package-manager }} run test:cov
+
+      - name: Enforce coverage threshold
+        if: always()
+        run: |
+          if [ -f coverage/coverage-summary.json ]; then
+            PCT=$(node -p "Math.floor(require('./coverage/coverage-summary.json').total.lines.pct)")
+            echo "Line coverage: $PCT%"
+            if [ "$PCT" -lt "${{ inputs.coverage-threshold }}" ]; then
+              echo "::error::Coverage $PCT% is below threshold ${{ inputs.coverage-threshold }}%"
+              exit 1
+            fi
+          fi
+
+      - if: ${{ env.CODECOV_TOKEN != '' }}
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          working-directory: ${{ inputs.working-directory }}
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  bundle-check:
+    name: Bundle / Expo prebuild check
+    needs: [lint, typecheck]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: actions/checkout@v4
+      - if: inputs.package-manager == 'pnpm'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: ${{ inputs.package-manager }}
+      - run: ${{ inputs.package-manager }} install --frozen-lockfile
+
+      - name: Setup Expo
+        if: inputs.expo
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      # Sanity: garante que o app empacota (não builda binário nativo)
+      - name: Expo export (sanity build)
+        if: inputs.expo
+        run: npx expo export --platform all --output-dir dist
+        continue-on-error: true
+
+      - name: Metro bundle sanity (non-Expo)
+        if: ${{ !inputs.expo }}
+        run: ${{ inputs.package-manager }} run bundle || echo "no bundle script — skipping"

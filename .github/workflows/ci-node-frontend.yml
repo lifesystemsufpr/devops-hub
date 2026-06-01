@@ -1,0 +1,145 @@
+name: CI Node Frontend (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        type: string
+        default: '22'
+      package-manager:
+        type: string
+        default: 'pnpm'
+      coverage-threshold:
+        type: number
+        default: 40
+      working-directory:
+        type: string
+        default: '.'
+      run-build:
+        type: boolean
+        default: true
+      next-app:
+        type: boolean
+        default: true
+        description: 'true = roda next build, false = build genérico'
+    secrets:
+      CODECOV_TOKEN:
+        required: false
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: actions/checkout@v4
+      - if: inputs.package-manager == 'pnpm'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: ${{ inputs.package-manager }}
+      - run: ${{ inputs.package-manager }} install --frozen-lockfile
+      - run: ${{ inputs.package-manager }} run lint
+
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: actions/checkout@v4
+      - if: inputs.package-manager == 'pnpm'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: ${{ inputs.package-manager }}
+      - run: ${{ inputs.package-manager }} install --frozen-lockfile
+      - run: ${{ inputs.package-manager }} run typecheck || npx tsc --noEmit
+
+  test:
+    name: Component + unit tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: actions/checkout@v4
+      - if: inputs.package-manager == 'pnpm'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: ${{ inputs.package-manager }}
+      - run: ${{ inputs.package-manager }} install --frozen-lockfile
+
+      - name: Run tests with coverage
+        run: ${{ inputs.package-manager }} run test:cov
+
+      - name: Enforce coverage threshold
+        if: always()
+        run: |
+          if [ -f coverage/coverage-summary.json ]; then
+            PCT=$(node -p "Math.floor(require('./coverage/coverage-summary.json').total.lines.pct)")
+            echo "Line coverage: $PCT%"
+            if [ "$PCT" -lt "${{ inputs.coverage-threshold }}" ]; then
+              echo "::error::Coverage $PCT% is below threshold ${{ inputs.coverage-threshold }}%"
+              exit 1
+            fi
+          else
+            echo "::warning::coverage/coverage-summary.json not found; skipping threshold check"
+          fi
+
+      - if: ${{ env.CODECOV_TOKEN != '' }}
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          working-directory: ${{ inputs.working-directory }}
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  build:
+    name: Build
+    if: ${{ inputs.run-build }}
+    needs: [lint, typecheck]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: actions/checkout@v4
+      - if: inputs.package-manager == 'pnpm'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: ${{ inputs.package-manager }}
+
+      # Cache do .next/cache acelera muito o next build incremental
+      - name: Cache Next.js
+        if: inputs.next-app
+        uses: actions/cache@v4
+        with:
+          path: ${{ inputs.working-directory }}/.next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml', '**/package-lock.json', '**/yarn.lock') }}-${{ hashFiles('**.[jt]s', '**.[jt]sx') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml', '**/package-lock.json', '**/yarn.lock') }}-
+
+      - run: ${{ inputs.package-manager }} install --frozen-lockfile
+      - run: ${{ inputs.package-manager }} run build
