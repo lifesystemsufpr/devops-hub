@@ -1,0 +1,26 @@
+name: CI
+
+# CI próprio do devops-hub (infra/tooling). Os workflows reutilizáveis
+# (ci-node-*.yml) são consumidos pelos repos de produto via workflow_call;
+# aqui só validamos os scripts deste repo.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck

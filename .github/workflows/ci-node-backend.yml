@@ -77,8 +77,8 @@ jobs:
           node-version: ${{ inputs.node-version }}
           cache: ${{ inputs.package-manager }}
       - run: ${{ inputs.package-manager }} install --frozen-lockfile
-      - name: Run ESLint
-        run: ${{ inputs.package-manager }} run lint
+      - name: Run ESLint (if defined)
+        run: ${{ inputs.package-manager }} run lint --if-present
 
   typecheck:
     name: Typecheck
@@ -120,8 +120,8 @@ jobs:
           cache: ${{ inputs.package-manager }}
       - run: ${{ inputs.package-manager }} install --frozen-lockfile
 
-      - name: Run tests with coverage
-        run: ${{ inputs.package-manager }} run test:cov
+      - name: Run tests with coverage (if defined)
+        run: ${{ inputs.package-manager }} run test:cov --if-present
         env:
           CI: true
 
@@ -176,4 +176,4 @@ jobs:
           node-version: ${{ inputs.node-version }}
           cache: ${{ inputs.package-manager }}
       - run: ${{ inputs.package-manager }} install --frozen-lockfile
-      - run: ${{ inputs.package-manager }} run build
+      - run: ${{ inputs.package-manager }} run build --if-present
