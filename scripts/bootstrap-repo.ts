@@ -185,11 +185,21 @@ async function processRepo(repo: RepoConfig) {
 
   // 1. ci.yml específico do tipo
   const ciTemplate = readTemplate(CI_TEMPLATE_BY_TYPE[repo.type]);
-  // Threshold por repo: substitui o default do template pelo configurado
-  const ci = ciTemplate.replace(
+  // Substitui os defaults do template pelo configurado no repos.config.ts:
+  // threshold de cobertura, package manager (npm/pnpm/yarn) e branch de gatilho.
+  let ci = ciTemplate.replace(
     /coverage-threshold: \d+/,
     `coverage-threshold: ${repo.coverageThreshold}`,
   );
+  if (repo.packageManager) {
+    ci = ci.replace(
+      /package-manager: '[^']*'/,
+      `package-manager: '${repo.packageManager}'`,
+    );
+  }
+  if (repo.defaultBranch !== 'main') {
+    ci = ci.replace(/branches: \[main\]/g, `branches: [${repo.defaultBranch}]`);
+  }
   await upsertFile(
     repo.name,
     BRANCH_NAME,

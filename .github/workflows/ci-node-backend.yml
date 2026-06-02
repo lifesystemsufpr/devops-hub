@@ -98,8 +98,8 @@ jobs:
           node-version: ${{ inputs.node-version }}
           cache: ${{ inputs.package-manager }}
       - run: ${{ inputs.package-manager }} install --frozen-lockfile
-      - name: Run tsc --noEmit
-        run: ${{ inputs.package-manager }} run typecheck || npx tsc --noEmit
+      - name: Run typecheck (if defined)
+        run: ${{ inputs.package-manager }} run typecheck --if-present
 
   test:
     name: Unit tests
