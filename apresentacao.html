@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>devops-hub — apresentação</title>
+<style>
+  :root{
+    --bg:#0f172a; --panel:#ffffff; --ink:#0f172a; --muted:#64748b;
+    --accent:#0ea5e9; --accent2:#2563eb; --line:#e2e8f0; --soft:#f8fafc;
+    --ok:#16a34a; --warn:#b45309; --stop:#dc2626;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--soft)}
+  .wrap{max-width:960px;margin:0 auto;padding:0 24px}
+  header{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;padding:56px 0 48px}
+  header .wrap{display:flex;flex-direction:column;gap:10px}
+  .kicker{font-size:13px;letter-spacing:.12em;text-transform:uppercase;opacity:.85}
+  h1{font-size:44px;margin:0;font-weight:800;letter-spacing:-.02em}
+  .lead{font-size:20px;max-width:660px;opacity:.95;margin:6px 0 0}
+  .pill{display:inline-block;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:4px 12px;font-size:13px;margin-top:14px;width:max-content}
+  section{padding:40px 0;border-bottom:1px solid var(--line)}
+  h2{font-size:26px;margin:0 0 6px;letter-spacing:-.01em}
+  h2 .n{color:var(--accent2);font-weight:800;margin-right:10px}
+  .sub{color:var(--muted);margin:0 0 22px}
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .cards.three{grid-template-columns:1fr 1fr 1fr}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+  .card h3{margin:0 0 6px;font-size:17px}
+  .card p{margin:0;color:var(--muted);font-size:15px}
+  .flow{display:flex;flex-wrap:wrap;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px}
+  .node{flex:1 1 110px;text-align:center;background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:14px 8px}
+  .node b{display:block;font-size:14.5px}
+  .node span{font-size:12px;color:var(--muted)}
+  .arrow{color:var(--accent2);font-size:22px;font-weight:800}
+  .node.stop{background:#fef2f2;border-color:#fecaca}
+  table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  th,td{text-align:left;padding:12px 16px;border-bottom:1px solid var(--line);font-size:15px}
+  th{background:var(--soft);font-weight:700}
+  tr:last-child td{border-bottom:0}
+  code{background:#e0f2fe;color:#075985;padding:1px 6px;border-radius:6px;font-size:13px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  pre{background:#0f172a;color:#e2e8f0;padding:16px 18px;border-radius:12px;overflow:auto;font-size:13.5px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .tag{display:inline-block;background:#ecfdf5;color:var(--ok);border:1px solid #bbf7d0;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:600}
+  .tag.warn{background:#fffbeb;color:var(--warn);border-color:#fde68a}
+  .tag.stop{background:#fef2f2;color:var(--stop);border-color:#fecaca}
+  ul.clean{list-style:none;padding:0;margin:0}
+  ul.clean li{padding:8px 0 8px 28px;position:relative;border-bottom:1px dashed var(--line)}
+  ul.clean li:before{content:"▹";position:absolute;left:6px;color:var(--accent2);font-weight:800}
+  ul.clean li:last-child{border-bottom:0}
+  footer{padding:30px 0 60px;color:var(--muted);font-size:14px}
+  a{color:var(--accent2);text-decoration:none}
+  a:hover{text-decoration:underline}
+  @media(max-width:640px){.cards,.cards.three{grid-template-columns:1fr}h1{font-size:34px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="kicker">Plataforma de Engenharia · lifesystemsufpr</div>
+    <h1>devops-hub</h1>
+    <p class="lead">O cérebro central de CI/CD e governança da org — e o pipeline que transforma uma especificação em código testado, com PR e CI, parando sozinho quando o risco é clínico.</p>
+    <span class="pill">github.com/lifesystemsufpr/devops-hub</span>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <h2><span class="n">01</span>A ideia</h2>
+    <p class="sub">Por que isso existe.</p>
+    <div class="cards">
+      <div class="card">
+        <h3>Hub-and-spoke</h3>
+        <p>Toda a lógica de CI (lint, typecheck, testes, build, cobertura) vive <b>num lugar só</b>. Cada repo só consome um <code>ci.yml</code> de ~15 linhas. Atualizar o CI dos 7 repos = <b>um commit</b> no hub.</p>
+      </div>
+      <div class="card">
+        <h3>Automação por risco</h3>
+        <p>Rotineiro = automatizado ponta a ponta. Clínico, autenticação e schema = <b>revisão humana obrigatória</b>. Software de saúde não admite full-autopilot.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2><span class="n">02</span>Como o CI funciona</h2>
+    <p class="sub">Um workflow reutilizável, vários repos consumindo.</p>
+    <div class="flow">
+      <div class="node"><b>devops-hub</b><span>workflows reutilizáveis</span></div>
+      <div class="arrow">→</div>
+      <div class="node"><b>ci.yml</b><span>~15 linhas no repo</span></div>
+      <div class="arrow">→</div>
+      <div class="node"><b>lint · typecheck</b><span>testes · cobertura · build</span></div>
+      <div class="arrow">→</div>
+      <div class="node"><b>PR verde</b><span>+ branch protection</span></div>
+    </div>
+    <p style="color:var(--muted);margin-top:16px">Governança junto: <code>CODEOWNERS</code> força revisão por área, <code>dependabot</code>, templates de PR/issue. Tudo distribuído pelo <code>bootstrap-repo.ts</code> (1 PR por repo) e protegido pelo <code>sync-branch-protection.ts</code>.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2><span class="n">03</span>O pipeline: spec → código → PR → CI</h2>
+    <p class="sub">Demonstração viva em <code>devops-hub/demo</code>. A geração por IA é o único pedaço mockado (com seam pronto p/ Claude/Cursor SDK).</p>
+    <div class="flow">
+      <div class="node"><b>spec</b><span>o quê (markdown)</span></div>
+      <div class="arrow">→</div>
+      <div class="node"><b>geração</b><span>mockada (seam IA)</span></div>
+      <div class="arrow">→</div>
+      <div class="node"><b>testes</b><span>derivados do spec</span></div>
+      <div class="arrow">→</div>
+      <div class="node"><b>PR</b><span>via gh</span></div>
+      <div class="arrow">→</div>
+      <div class="node"><b>CI</b><span>valida verde</span></div>
+    </div>
+    <p style="margin:18px 0 10px"><span class="tag stop">Guard-rail</span> &nbsp; Quando o spec é de área sensível, o pipeline <b>para antes de gerar</b>:</p>
+    <div class="flow">
+      <div class="node"><b>spec clínico</b><span>area: clinical</span></div>
+      <div class="arrow">→</div>
+      <div class="node stop"><b>⛔ PARA</b><span>exige revisão humana</span></div>
+    </div>
+    <pre>cd demo &amp;&amp; npm install
+
+npm run pipeline -- specs/001-apply-discount.md --dry   # gera + testa local
+npm run pipeline -- specs/001-apply-discount.md         # PR real + CI verde
+npm run pipeline -- specs/002-ivcf-frailty-score.md     # guard-rail: PARA</pre>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2><span class="n">04</span>O que é real x mockado</h2>
+    <p class="sub">Honestidade para a apresentação.</p>
+    <table>
+      <tr><th>Parte</th><th>Estado</th></tr>
+      <tr><td>Spec como fonte da verdade</td><td><span class="tag">real</span></td></tr>
+      <tr><td>Geração do código</td><td><span class="tag warn">mockada</span> — seam em <code>pipeline/generator.ts</code></td></tr>
+      <tr><td>Testes derivados do spec (validação não-circular)</td><td><span class="tag">real</span></td></tr>
+      <tr><td>Branch · commit · PR</td><td><span class="tag">real</span> (via <code>gh</code>)</td></tr>
+      <tr><td>CI (job <code>demo</code>)</td><td><span class="tag">real</span></td></tr>
+      <tr><td>Guard-rail de saúde</td><td><span class="tag">real</span></td></tr>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2><span class="n">05</span>Como vira produção</h2>
+    <p class="sub">O seam é único e claro.</p>
+    <ul class="clean">
+      <li><b>O cérebro:</b> trocar o mapa <code>CANNED_IMPLS</code> em <code>pipeline/generator.ts</code> por uma chamada ao <b>Claude Agent SDK</b> ou <b>Cursor SDK</b>, passando o spec + as regras do <b>ai-toolkit</b> como contexto.</li>
+      <li><b>O gatilho:</b> deixa de ser <code>npm run pipeline</code> e passa a ser uma <b>task do ClickUp</b> (integração nativa ClickUp↔Cursor) ou uma issue (Copilot coding agent).</li>
+      <li><b>O resto não muda:</b> validação, PR e CI continuam idênticos. O guard-rail vem das regras commitadas; o <code>CODEOWNERS</code> força reviewer em área de risco.</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    devops-hub · plataforma de automação de engenharia da <b>lifesystemsufpr</b> ·
+    parte do trio <b>ai-toolkit</b> (regras de IA) + <b>devops-hub</b> (CI central) + <b>pipeline</b> (spec→código→PR→CI).
+    Roteiro de apresentação em <code>demo/DEMO.md</code>.
+  </div>
+</footer>
+</body>
+</html>
