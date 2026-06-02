@@ -40,3 +40,13 @@ npm run dev                            # http://localhost:3000
 - **Permissions:** Metadata: Read · Contents: Read · Pull requests: Read · **Actions: Read and write** (o write é p/ o `workflow_dispatch` no devops-hub).
 
 > Dica: proteja a URL (Vercel → Settings → Deployment Protection) se quiser restringir quem vê.
+
+## Specs novos abrirem PR (secret `PIPELINE_TOKEN`)
+
+A org bloqueia o `GITHUB_TOKEN` do Actions de **criar PR novo**. Specs já existentes
+reusam o PR e funcionam sem nada. Para **specs novos** (branch novo) abrirem PR pelo
+pipeline, adicione no `devops-hub` um secret **`PIPELINE_TOKEN`**
+(Settings → Secrets and variables → Actions → New repository secret) com um PAT que
+tenha **Contents: Read and write** e **Pull requests: Read and write** no `devops-hub`.
+O `pipeline.yml` já usa esse secret automaticamente quando presente (fallback no token padrão).
+

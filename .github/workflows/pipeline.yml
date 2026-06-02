@@ -26,6 +26,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          # Usa o PAT (secret PIPELINE_TOKEN) se existir — necessário p/ abrir PR de
+          # specs novos (a org bloqueia o GITHUB_TOKEN de criar PR). Cai no token
+          # padrão se o secret não estiver configurado.
+          token: ${{ secrets.PIPELINE_TOKEN || github.token }}
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -38,5 +42,5 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
       - name: Rodar pipeline (modo CI)
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.PIPELINE_TOKEN || github.token }}
         run: npm run pipeline -- "${{ inputs.spec }}" --ci
