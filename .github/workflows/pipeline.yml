@@ -1,0 +1,42 @@
+name: Pipeline (spec → código → PR)
+
+# Acionável por clique no dashboard (workflow_dispatch). Roda o orquestrador
+# do demo no próprio Actions: gera o código, valida e abre o PR. O guard-rail
+# (specs de área clínica/auth/schema) é checado dentro do orquestrador.
+on:
+  workflow_dispatch:
+    inputs:
+      spec:
+        description: 'Spec a executar (caminho relativo a demo/)'
+        required: true
+        default: 'specs/001-apply-discount.md'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  run:
+    name: Executar pipeline
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: demo
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: demo/package-lock.json
+      - run: npm ci
+      - name: Configurar git
+        run: |
+          git config --global user.name "pipeline-bot"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+      - name: Rodar pipeline (modo CI)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: npm run pipeline -- "${{ inputs.spec }}" --ci

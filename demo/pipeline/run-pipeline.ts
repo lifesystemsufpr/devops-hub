@@ -47,6 +47,7 @@ async function latestRunId(branch: string): Promise<string | null> {
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const dry = args.includes('--dry');
+  const ci = args.includes('--ci'); // roda no GitHub Actions: abre o PR e sai (sem watch)
   const specArg = args.find((a) => !a.startsWith('--')) ?? 'specs/001-apply-discount.md';
   const spec = parseSpec(resolve(ROOT, specArg));
 
@@ -105,6 +106,13 @@ async function main(): Promise<void> {
     prUrl = sh(`gh pr view ${branch} --repo ${REPO} --json url --jq ".url"`, GITROOT);
   }
   console.log(`   PR: ${prUrl}`);
+
+  // No modo CI (rodando dentro do Actions) não esperamos o CI aqui — o PR aberto
+  // já dispara o ci.yml, e o dashboard acompanha o status separadamente.
+  if (ci) {
+    console.log('\n✅ PR aberto (modo CI). O ci.yml valida o código gerado no PR.');
+    return;
+  }
 
   // 5. Acompanha o CI (job `demo` do devops-hub valida o código gerado)
   console.log('\n⏳ Aguardando o CI do devops-hub (job demo)...');
