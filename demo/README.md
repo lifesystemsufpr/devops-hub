@@ -1,7 +1,8 @@
-# pipeline-demo
+# demo — pipeline de automação
 
 Demonstração do pipeline de automação da plataforma `lifesystemsufpr`:
 **spec → geração de código → validação → PR → CI** — com automação por risco.
+Vive em `devops-hub/demo`. Roteiro de apresentação em [DEMO.md](DEMO.md).
 
 ```
 specs/*.md  ──▶  pipeline/run-pipeline.ts  ──▶  src/<feature>.ts + testes  ──▶  PR  ──▶  CI (devops-hub)
