@@ -91,6 +91,14 @@ export function applyDiscount(price: number, pct: number): number {
   return Math.round(price * (1 - pct / 100) * 100) / 100;
 }
 `,
+  clamp: () => `/** Gerado pelo pipeline a partir do spec clamp (gerador mockado). */
+export function clamp(value: number, min: number, max: number): number {
+  if (min > max) {
+    throw new Error('min não pode ser maior que max');
+  }
+  return Math.min(Math.max(value, min), max);
+}
+`,
 };
 
 /** Back-end de geração da implementação. */

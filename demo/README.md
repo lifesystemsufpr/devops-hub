@@ -31,6 +31,9 @@ npm run pipeline -- specs/001-apply-discount.md
 # só validar local (sem PR)
 npm run pipeline -- specs/001-apply-discount.md --dry
 
+# outra rotina (clamp) — prova o fluxo ponta a ponta com uma spec nova
+npm run pipeline -- specs/003-clamp.md --dry
+
 # clínico: guard-rail PARA antes de gerar
 npm run pipeline -- specs/002-ivcf-frailty-score.md
 ```
