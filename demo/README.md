@@ -14,7 +14,7 @@ specs/*.md  ──▶  pipeline/run-pipeline.ts  ──▶  src/<feature>.ts + t
 | Parte | Estado |
 |---|---|
 | Spec como fonte da verdade | real (markdown com frontmatter + exemplos) |
-| Geração do código | **mockada** — `pipeline/generator.ts` tem o seam p/ Claude/Cursor SDK |
+| Geração do código | **dois back-ends** — `claude` CLI (real) ou mock canônico, atrás do mesmo seam |
 | Testes derivados do spec | real (gerados a partir dos exemplos — validação não-circular) |
 | Branch, commit, PR | real (via `gh`) |
 | CI | real — consome o workflow reutilizável do `devops-hub` (`.github/workflows/ci.yml`) |
@@ -35,9 +35,32 @@ npm run pipeline -- specs/001-apply-discount.md --dry
 npm run pipeline -- specs/002-ivcf-frailty-score.md
 ```
 
-## Produção (seam)
+## Gerador: mock vs. claude (seam real)
 
-Trocar o mapa `CANNED_IMPLS` em `pipeline/generator.ts` por uma chamada ao agente
-(Claude Agent SDK ou Cursor SDK), passando o spec + as regras do `ai-toolkit` como
-contexto. O disparo, em produção, vem de uma task do ClickUp (integração nativa
+O seam de geração é a função `generate()` em `pipeline/generator.ts`, com dois
+back-ends selecionados pela env `PIPELINE_GENERATOR`:
+
+| Modo | Comportamento |
+|---|---|
+| `mock` | implementação canônica por id de spec (determinístico). Usado nos testes e no CI. |
+| `claude` | chama o `claude` CLI headless (`claude -p`) passando o spec como prompt e extraindo o bloco de código TS. Exige o CLI **autenticado**. |
+| `auto` *(default)* | usa `claude` se disponível; **cai no mock** se o CLI não existir ou falhar (ex.: sem auth). |
+
+```bash
+# gerar de verdade com o claude CLI (precisa de `claude` autenticado na máquina)
+PIPELINE_GENERATOR=claude npm run pipeline -- specs/001-apply-discount.md --dry
+```
+
+Em qualquer modo, **os testes são derivados dos exemplos do spec** (não do código
+gerado) — então a validação não é circular: se o `claude` gerar algo errado, os
+testes derivados quebram e o pipeline falha.
+
+> Auth: o gerador `claude` usa a sessão já existente do CLI (`claude` na sua máquina)
+> — **sem API key nova**. No CI o `claude` não está instalado, então o modo efetivo é
+> `mock` (o CI valida o *pipeline*, não a geração por IA).
+
+## Produção
+
+Em produção o modo `claude` (ou um Agent/Cursor SDK) recebe o spec + as regras do
+`ai-toolkit` como contexto, e o disparo vem de uma task do ClickUp (integração nativa
 ClickUp↔Cursor) em vez de `npm run pipeline`.
