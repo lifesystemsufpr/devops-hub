@@ -9,7 +9,7 @@
     "bootstrap:dry": "DRY_RUN=1 tsx scripts/bootstrap-repo.ts",
     "protect": "tsx scripts/sync-branch-protection.ts",
     "protect:dry": "DRY_RUN=1 tsx scripts/sync-branch-protection.ts",
-    "lint": "eslint scripts",
+    "lint": "eslint scripts demo/pipeline",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:cov": "vitest run --coverage"
