@@ -9,6 +9,10 @@ on:
   push:
     branches: [main]
 
+env:
+  # Opt-in ao runtime Node 24 (silencia o aviso de deprecação do Node 20 nos actions JS)
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   typecheck:
     name: Typecheck
