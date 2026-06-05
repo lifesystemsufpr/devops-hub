@@ -2,7 +2,13 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { parseSpec, generate, isSensitiveArea, SENSITIVE_AREAS } from './generator.js';
+import {
+  parseSpec,
+  generate,
+  isSensitiveArea,
+  SENSITIVE_AREAS,
+  extractCodeBlock,
+} from './generator.js';
 
 // Spec de exemplo (área geral) usado em vários testes de parseSpec/generate.
 const APPLY_DISCOUNT_SPEC = `---
@@ -111,6 +117,26 @@ describe('generate', () => {
     const spec = parseSpec(
       specFile('unknown.md', `---\nid: nao-existe\ntitle: N\narea: general\nmodule: n\nexport: n\n---\n`),
     );
-    expect(() => generate(spec)).toThrow(/Sem template/);
+    expect(() => generate(spec, 'mock')).toThrow(/Sem template/);
+  });
+});
+
+describe('extractCodeBlock (parser de saída do claude)', () => {
+  it('extrai o conteúdo de um bloco ```ts', () => {
+    const out = 'Aqui está:\n```ts\nexport function f(): number { return 1; }\n```\nPronto.';
+    expect(extractCodeBlock(out)).toBe('export function f(): number { return 1; }');
+  });
+
+  it('aceita ```typescript e ``` sem linguagem', () => {
+    expect(extractCodeBlock('```typescript\nexport function g() {}\n```')).toBe('export function g() {}');
+    expect(extractCodeBlock('```\nexport function h() {}\n```')).toBe('export function h() {}');
+  });
+
+  it('faz fallback para texto cru que já contém a função', () => {
+    expect(extractCodeBlock('export function k(): void {}')).toBe('export function k(): void {}');
+  });
+
+  it('devolve null quando não há código', () => {
+    expect(extractCodeBlock('desculpe, não consegui gerar')).toBeNull();
   });
 });

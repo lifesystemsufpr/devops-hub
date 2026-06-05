@@ -1,13 +1,18 @@
 import { readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 
 /**
  * Gerador de código do pipeline.
  *
- * >>> A "IA" aqui é MOCKADA <<<
- * `generate()` hoje devolve uma implementação canônica por id de spec. O seam de
- * produção é exatamente esta função: troque o mapa CANNED_IMPLS por uma chamada ao
- * Claude Agent SDK / Cursor SDK, passando o spec + as regras do ai-toolkit como
- * contexto. O resto do pipeline (validação, PR, CI) não muda.
+ * Dois back-ends atrás do mesmo seam (`generate`):
+ *  - **mock**: implementação canônica por id de spec (CANNED_IMPLS). Determinístico,
+ *    usado nos testes e no CI (onde não há `claude` instalado).
+ *  - **claude**: chama o `claude` CLI em modo headless (`-p`/`--print`) passando o spec
+ *    como prompt e extraindo o bloco de código TS. Usa a auth já existente do CLI —
+ *    sem API key nova. Cai no mock se o CLI não estiver disponível (modo `auto`).
+ *
+ * Em qualquer modo, os TESTES são derivados dos EXEMPLOS do spec (renderTest) — a
+ * validação não é circular: os casos vêm da especificação, não de quem gerou o código.
  */
 
 export interface Spec {
@@ -88,16 +93,95 @@ export function applyDiscount(price: number, pct: number): number {
 `,
 };
 
-export function generate(spec: Spec): GeneratedFile[] {
+/** Back-end de geração da implementação. */
+export type GeneratorMode = 'mock' | 'claude' | 'auto';
+
+/** true se o `claude` CLI está instalado e responde a `--version`. */
+export function claudeAvailable(): boolean {
+  try {
+    execFileSync('claude', ['--version'], { stdio: 'ignore', timeout: 15_000 });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Implementação mockada (canônica por id de spec). */
+function mockImpl(spec: Spec): string {
   const impl = CANNED_IMPLS[spec.id];
   if (!impl) {
     throw new Error(
       `Sem template (mock) de geração para o spec "${spec.id}". ` +
-        `Em produção, um agente (Claude/Cursor) geraria o código aqui.`,
+        `Rode com o gerador real (claude) ou adicione um template ao CANNED_IMPLS.`,
     );
   }
+  return impl(spec);
+}
+
+function buildPrompt(spec: Spec): string {
   return [
-    { path: `src/${spec.module}.ts`, content: impl(spec) },
+    'Você é o gerador de código de um pipeline de engenharia. Gere SOMENTE a implementação',
+    'TypeScript da função especificada — nada de testes, imports supérfluos ou explicações.',
+    '',
+    `id do spec: ${spec.id}`,
+    `módulo (arquivo src/${spec.module}.ts): ${spec.module}`,
+    `função exportada: ${spec.export}`,
+    '',
+    'Especificação:',
+    spec.body.trim(),
+    '',
+    'Regras de saída (obrigatórias):',
+    `- Responda APENAS com um único bloco de código \`\`\`ts ... \`\`\`.`,
+    `- O bloco deve conter exatamente \`export function ${spec.export}(...)\` com tipos explícitos.`,
+    '- Validar as pré-condições e lançar Error quando violadas (conforme os exemplos "throws").',
+    '- Sem texto fora do bloco de código.',
+  ].join('\n');
+}
+
+/** Extrai o conteúdo do primeiro bloco de código (```ts / ```typescript / ```). */
+export function extractCodeBlock(out: string): string | null {
+  const fenced = out.match(/```(?:ts|typescript)?\s*\n([\s\S]*?)```/i);
+  if (fenced) return fenced[1].trim();
+  // fallback: se já veio só o código com a assinatura esperada
+  if (/export\s+function\s+\w+/.test(out)) return out.trim();
+  return null;
+}
+
+/** Chama o `claude` CLI headless e devolve a implementação, ou null em falha. */
+function claudeImpl(spec: Spec): string | null {
+  try {
+    const out = execFileSync('claude', ['-p', buildPrompt(spec)], {
+      encoding: 'utf8',
+      timeout: 180_000,
+      maxBuffer: 10 * 1024 * 1024,
+    });
+    const code = extractCodeBlock(out);
+    if (!code || !code.includes(`function ${spec.export}`)) return null;
+    return `/** Gerado pelo pipeline a partir do spec ${spec.id} (gerador: claude CLI). */\n${code}\n`;
+  } catch {
+    return null;
+  }
+}
+
+export function generate(spec: Spec, mode: GeneratorMode = 'mock'): GeneratedFile[] {
+  let impl: string;
+  const useClaude = mode === 'claude' || (mode === 'auto' && claudeAvailable());
+  if (useClaude) {
+    const generated = claudeImpl(spec);
+    if (generated) {
+      impl = generated;
+    } else if (mode === 'claude') {
+      throw new Error(
+        `Gerador real (claude) exigido, mas falhou ao gerar a implementação do spec "${spec.id}".`,
+      );
+    } else {
+      impl = mockImpl(spec); // auto: cai no mock
+    }
+  } else {
+    impl = mockImpl(spec);
+  }
+  return [
+    { path: `src/${spec.module}.ts`, content: impl },
     { path: `src/${spec.module}.test.ts`, content: renderTest(spec) },
   ];
 }

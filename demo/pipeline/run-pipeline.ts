@@ -1,7 +1,8 @@
 import { execSync } from 'node:child_process';
 import { writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
-import { parseSpec, generate, isSensitiveArea } from './generator.js';
+import { parseSpec, generate, isSensitiveArea, claudeAvailable } from './generator.js';
+import type { GeneratorMode } from './generator.js';
 
 /**
  * Orquestrador do pipeline: spec -> (geração mockada) -> validação -> PR -> CI.
@@ -62,9 +63,12 @@ async function main(): Promise<void> {
     return;
   }
 
-  // 2. Geração (MOCKADA — seam p/ Claude/Cursor SDK)
-  console.log('\n🤖 Gerando código (gerador mockado — seam p/ Claude/Cursor SDK)...');
-  const files = generate(spec);
+  // 2. Geração — back-end escolhido por PIPELINE_GENERATOR (mock|claude|auto).
+  //    'auto' (default) usa o claude CLI se disponível, senão cai no mock.
+  const mode = (process.env.PIPELINE_GENERATOR as GeneratorMode) || 'auto';
+  const effective = mode === 'auto' ? (claudeAvailable() ? 'claude' : 'mock') : mode;
+  console.log(`\n🤖 Gerando código (gerador: ${effective}${mode === 'auto' ? ' [auto]' : ''})...`);
+  const files = generate(spec, mode);
   for (const f of files) {
     mkdirSync(dirname(join(ROOT, f.path)), { recursive: true });
     writeFileSync(join(ROOT, f.path), f.content);
