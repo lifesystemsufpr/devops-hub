@@ -48,7 +48,8 @@ export function isSensitiveArea(area: string): boolean {
 }
 
 export function parseSpec(path: string): Spec {
-  const raw = readFileSync(path, 'utf8');
+  // Normaliza CRLF→LF: specs criados no Windows/checkout com autocrlf quebrariam o regex.
+  const raw = readFileSync(path, 'utf8').replace(/\r\n/g, '\n');
   const m = raw.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
   if (!m) throw new Error(`Spec sem frontmatter: ${path}`);
   const [, fm, body] = m;
@@ -114,6 +115,25 @@ export function claudeAvailable(): boolean {
   }
 }
 
+/**
+ * Resolve o back-end efetivo a partir do modo + disponibilidade do claude.
+ * Pura/testável — usada pelo generate() e pelo run-pipeline (sem duplicar a regra).
+ *   mock   → sempre mock
+ *   claude → sempre claude (falha explícita se não gerar)
+ *   auto   → claude se disponível, senão mock
+ */
+export function resolveBackend(mode: GeneratorMode, claudeAvail: boolean): 'mock' | 'claude' {
+  if (mode === 'mock') return 'mock';
+  if (mode === 'claude') return 'claude';
+  return claudeAvail ? 'claude' : 'mock';
+}
+
+/** Timeout (ms) da chamada ao claude CLI — configurável via CLAUDE_TIMEOUT_MS. */
+function claudeTimeoutMs(): number {
+  const v = Number(process.env.CLAUDE_TIMEOUT_MS);
+  return Number.isFinite(v) && v > 0 ? v : 120_000;
+}
+
 /** Implementação mockada (canônica por id de spec). */
 function mockImpl(spec: Spec): string {
   const impl = CANNED_IMPLS[spec.id];
@@ -160,7 +180,7 @@ function claudeImpl(spec: Spec): string | null {
   try {
     const out = execFileSync('claude', ['-p', buildPrompt(spec)], {
       encoding: 'utf8',
-      timeout: 180_000,
+      timeout: claudeTimeoutMs(),
       maxBuffer: 10 * 1024 * 1024,
     });
     const code = extractCodeBlock(out);
@@ -173,8 +193,8 @@ function claudeImpl(spec: Spec): string | null {
 
 export function generate(spec: Spec, mode: GeneratorMode = 'mock'): GeneratedFile[] {
   let impl: string;
-  const useClaude = mode === 'claude' || (mode === 'auto' && claudeAvailable());
-  if (useClaude) {
+  const backend = resolveBackend(mode, mode === 'auto' ? claudeAvailable() : true);
+  if (backend === 'claude') {
     const generated = claudeImpl(spec);
     if (generated) {
       impl = generated;
