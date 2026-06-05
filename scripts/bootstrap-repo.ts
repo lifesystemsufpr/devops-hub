@@ -26,6 +26,7 @@ import {
   COMMON_FILES,
   type RepoConfig,
 } from './repos.config.js';
+import { applyCiTemplate } from './config-utils.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const HUB_ROOT = resolve(__dirname, '..');
@@ -183,23 +184,10 @@ async function processRepo(repo: RepoConfig) {
   // Garante branch
   await ensureBranch(repo.name, repo.defaultBranch, BRANCH_NAME);
 
-  // 1. ci.yml específico do tipo
+  // 1. ci.yml específico do tipo — aplica os defaults do repos.config.ts
+  //    (threshold de cobertura, package manager e branch de gatilho).
   const ciTemplate = readTemplate(CI_TEMPLATE_BY_TYPE[repo.type]);
-  // Substitui os defaults do template pelo configurado no repos.config.ts:
-  // threshold de cobertura, package manager (npm/pnpm/yarn) e branch de gatilho.
-  let ci = ciTemplate.replace(
-    /coverage-threshold: \d+/,
-    `coverage-threshold: ${repo.coverageThreshold}`,
-  );
-  if (repo.packageManager) {
-    ci = ci.replace(
-      /package-manager: '[^']*'/,
-      `package-manager: '${repo.packageManager}'`,
-    );
-  }
-  if (repo.defaultBranch !== 'main') {
-    ci = ci.replace(/branches: \[main\]/g, `branches: [${repo.defaultBranch}]`);
-  }
+  const ci = applyCiTemplate(ciTemplate, repo);
   await upsertFile(
     repo.name,
     BRANCH_NAME,
