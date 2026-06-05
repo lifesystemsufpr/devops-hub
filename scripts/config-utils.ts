@@ -49,3 +49,21 @@ export function validateRepos(repos: RepoConfig[]): string[] {
 export function qualifiedCheck(callerJob: string, reusableJob: string): string {
   return `${callerJob} / ${reusableJob}`;
 }
+
+/**
+ * Aplica os defaults do repo a um template de ci.yml: threshold de cobertura,
+ * package manager (npm/pnpm/yarn) e branch de gatilho. Pura/testável.
+ */
+export function applyCiTemplate(
+  template: string,
+  repo: Pick<RepoConfig, 'coverageThreshold' | 'packageManager' | 'defaultBranch'>,
+): string {
+  let ci = template.replace(/coverage-threshold: \d+/, `coverage-threshold: ${repo.coverageThreshold}`);
+  if (repo.packageManager) {
+    ci = ci.replace(/package-manager: '[^']*'/, `package-manager: '${repo.packageManager}'`);
+  }
+  if (repo.defaultBranch !== 'main') {
+    ci = ci.replace(/branches: \[main\]/g, `branches: [${repo.defaultBranch}]`);
+  }
+  return ci;
+}

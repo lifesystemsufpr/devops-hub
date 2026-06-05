@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { validateRepos, qualifiedCheck } from './config-utils.js';
+import { validateRepos, qualifiedCheck, applyCiTemplate } from './config-utils.js';
 import { REPOS, type RepoConfig } from './repos.config.js';
 
 const base: RepoConfig = {
@@ -62,5 +62,46 @@ describe('validateRepos', () => {
 describe('qualifiedCheck', () => {
   it('formata <caller> / <reusable> (foot-gun da branch protection)', () => {
     expect(qualifiedCheck('ci', 'Lint')).toBe('ci / Lint');
+  });
+});
+
+describe('applyCiTemplate', () => {
+  const tpl = [
+    'on:',
+    '  pull_request:',
+    '    branches: [main]',
+    '  push:',
+    '    branches: [main]',
+    'with:',
+    "  package-manager: 'pnpm'",
+    '  coverage-threshold: 30',
+  ].join('\n');
+
+  it('substitui o threshold de cobertura', () => {
+    const out = applyCiTemplate(tpl, { coverageThreshold: 60, packageManager: 'npm', defaultBranch: 'main' });
+    expect(out).toContain('coverage-threshold: 60');
+    expect(out).not.toContain('coverage-threshold: 30');
+  });
+
+  it('substitui o package manager quando definido', () => {
+    const out = applyCiTemplate(tpl, { coverageThreshold: 30, packageManager: 'npm', defaultBranch: 'main' });
+    expect(out).toContain("package-manager: 'npm'");
+    expect(out).not.toContain("package-manager: 'pnpm'");
+  });
+
+  it('mantém o package manager do template quando não definido (kotlin)', () => {
+    const out = applyCiTemplate(tpl, { coverageThreshold: 30, packageManager: undefined, defaultBranch: 'main' });
+    expect(out).toContain("package-manager: 'pnpm'");
+  });
+
+  it('troca todas as ocorrências de branch quando defaultBranch != main', () => {
+    const out = applyCiTemplate(tpl, { coverageThreshold: 30, packageManager: 'npm', defaultBranch: 'master' });
+    expect(out).toContain('branches: [master]');
+    expect(out).not.toContain('branches: [main]');
+  });
+
+  it('não mexe nas branches quando defaultBranch é main', () => {
+    const out = applyCiTemplate(tpl, { coverageThreshold: 30, packageManager: 'npm', defaultBranch: 'main' });
+    expect((out.match(/branches: \[main\]/g) ?? []).length).toBe(2);
   });
 });
