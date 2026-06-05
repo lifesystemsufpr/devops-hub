@@ -1,8 +1,9 @@
 import { execSync } from 'node:child_process';
 import { writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
-import { parseSpec, generate, isSensitiveArea, claudeAvailable } from './generator.js';
+import { parseSpec, generate, isSensitiveArea, claudeAvailable, renderPrBody } from './generator.js';
 import type { GeneratorMode } from './generator.js';
+import { tmpdir } from 'node:os';
 
 /**
  * Orquestrador do pipeline: spec -> (geração mockada) -> validação -> PR -> CI.
@@ -97,16 +98,22 @@ async function main(): Promise<void> {
   shInherit(`git push -u origin ${branch} --force`, GITROOT);
 
   console.log('\n🔀 Abrindo PR...');
+  // Corpo enriquecido (suposições + cobertura) via arquivo — evita problemas de
+  // quoting com markdown/quebras de linha no shell.
+  const bodyFile = join(tmpdir(), `pr-body-${spec.id}-${Date.now()}.md`);
+  writeFileSync(bodyFile, renderPrBody(spec, { generator: effective }));
   let prUrl: string;
   try {
     prUrl = sh(
       `gh pr create --repo ${REPO} --base main --head ${branch} ` +
         `--title "feat(demo): ${spec.title}" ` +
-        `--body "Gerado pelo pipeline a partir do spec ${spec.id}. Geracao mockada (seam p/ Claude/Cursor SDK). Testes derivados dos exemplos do spec. Validado pelo job demo do CI."`,
+        `--body-file "${bodyFile}"`,
       GITROOT,
     );
   } catch {
     prUrl = sh(`gh pr view ${branch} --repo ${REPO} --json url --jq ".url"`, GITROOT);
+  } finally {
+    rmSync(bodyFile, { force: true });
   }
   console.log(`   PR: ${prUrl}`);
 

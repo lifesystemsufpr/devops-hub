@@ -186,6 +186,73 @@ export function generate(spec: Spec, mode: GeneratorMode = 'mock'): GeneratedFil
   ];
 }
 
+/** Extrai as linhas sob um header markdown (até o próximo header de mesmo/maior nível). */
+export function extractSection(body: string, header: string): string[] {
+  const lines = body.split('\n');
+  const out: string[] = [];
+  let inSection = false;
+  for (const line of lines) {
+    const h = line.match(/^(#{1,6})\s+(.*)$/);
+    if (h) {
+      if (inSection) break; // chegou no próximo header → fim da seção
+      if (h[2].trim().toLowerCase() === header.toLowerCase()) inSection = true;
+      continue;
+    }
+    if (inSection && line.trim()) out.push(line.trim());
+  }
+  return out;
+}
+
+/**
+ * Corpo do PR aberto pelo pipeline — enriquecido (regras commits-pr/healthcare):
+ * resumo, área de risco, suposições (regras do spec) e cobertura dos testes
+ * derivados dos exemplos.
+ */
+export function renderPrBody(spec: Spec, opts: { generator: string }): string {
+  const sensitive = isSensitiveArea(spec.area);
+  const rules = extractSection(spec.body, 'Regras');
+  const assumptions = rules.length
+    ? rules.map((r) => (r.startsWith('-') ? r : `- ${r}`)).join('\n')
+    : '- (spec sem seção "Regras" — contrato definido pelos exemplos abaixo)';
+  const coverage = spec.examples.length
+    ? spec.examples
+        .map((e) => (e.throws ? `- \`${e.call}\` → lança erro` : `- \`${e.call}\` → \`${e.expected}\``))
+        .join('\n')
+    : '- (spec sem exemplos)';
+
+  return [
+    `## Resumo`,
+    ``,
+    `Gerado pelo **pipeline** a partir do spec \`${spec.id}\` — _${spec.title}_.`,
+    ``,
+    `| Campo | Valor |`,
+    `|---|---|`,
+    `| Spec | \`${spec.id}\` |`,
+    `| Área de risco | \`${spec.area}\` ${sensitive ? '⛔ sensível' : '✅ geral'} |`,
+    `| Módulo | \`src/${spec.module}.ts\` |`,
+    `| Função | \`${spec.export}\` |`,
+    `| Gerador | ${opts.generator} |`,
+    ``,
+    `## Suposições`,
+    ``,
+    `Contrato assumido na geração (extraído do spec):`,
+    ``,
+    assumptions,
+    ``,
+    `## Cobertura de testes (derivada do spec)`,
+    ``,
+    `${spec.examples.length} caso(s) gerados a partir dos **exemplos do spec** — validação não-circular:`,
+    ``,
+    coverage,
+    ``,
+    `> Os testes vêm da especificação, não do código gerado: se a implementação`,
+    `> divergir do contrato, o CI quebra.`,
+    ``,
+    `---`,
+    `🤖 Aberto pelo pipeline (\`demo/pipeline\`). Revisão humana exigida via CODEOWNERS.`,
+  ].join('\n');
+}
+
 function renderTest(spec: Spec): string {
   const cases = spec.examples
     .map((e) =>
