@@ -28,11 +28,22 @@ interface Run {
   at: string;
   event: string;
 }
+interface PullRequest {
+  number: number;
+  title: string;
+  url: string;
+  branch: string;
+  author: string;
+  draft: boolean;
+  createdAt: string;
+  isPipeline: boolean;
+}
 
 const CI_LABEL: Record<string, string> = {
   success: 'verde',
   failure: 'falhou',
   in_progress: 'rodando',
+  queued: 'na fila',
   unknown: '—',
 };
 
@@ -53,32 +64,41 @@ export default function Page() {
   const [repos, setRepos] = useState<RepoStatus[]>([]);
   const [specs, setSpecs] = useState<SpecInfo[]>([]);
   const [runs, setRuns] = useState<Run[]>([]);
+  const [prs, setPrs] = useState<PullRequest[]>([]);
   const [token, setToken] = useState('');
   const [busy, setBusy] = useState<string | null>(null);
   const [toast, setToast] = useState<{ msg: string; kind: 'ok' | 'err' } | null>(null);
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
+  // Modo "ao vivo": após acionar, poll acelera por uma janela p/ acompanhar o run.
+  const [liveUntil, setLiveUntil] = useState<number>(0);
 
   useEffect(() => {
     setToken(localStorage.getItem('dash_token') ?? '');
   }, []);
 
   const refresh = useCallback(async () => {
-    const [s, sp, r] = await Promise.all([
+    const [s, sp, r, p] = await Promise.all([
       fetch('/api/status').then((x) => x.json()).catch(() => []),
       fetch('/api/specs').then((x) => x.json()).catch(() => []),
       fetch('/api/run').then((x) => x.json()).catch(() => []),
+      fetch('/api/prs').then((x) => x.json()).catch(() => []),
     ]);
     setRepos(s);
     setSpecs(sp);
     setRuns(r);
+    setPrs(p);
     setUpdatedAt(new Date());
   }, []);
 
+  // Há run ativo (na fila/rodando) OU estamos na janela ao vivo após acionar.
+  const hasActiveRun = runs.some((r) => r.status !== 'completed');
+  const live = Date.now() < liveUntil || hasActiveRun;
+
   useEffect(() => {
     refresh();
-    const t = setInterval(refresh, 15000);
+    const t = setInterval(refresh, live ? 4000 : 15000);
     return () => clearInterval(t);
-  }, [refresh]);
+  }, [refresh, live]);
 
   function showToast(msg: string, kind: 'ok' | 'err') {
     setToast({ msg, kind });
@@ -97,7 +117,8 @@ export default function Page() {
       if (!res.ok) {
         showToast(data.error ?? 'Falha ao acionar.', 'err');
       } else {
-        showToast(`Pipeline acionado para "${spec.title}". Acompanhe abaixo.`, 'ok');
+        showToast(`Pipeline acionado para "${spec.title}". Acompanhe ao vivo abaixo.`, 'ok');
+        setLiveUntil(Date.now() + 120000); // 2min de poll acelerado
         setTimeout(refresh, 2500);
       }
     } catch (e) {
@@ -127,8 +148,11 @@ export default function Page() {
               localStorage.setItem('dash_token', e.target.value);
             }}
           />
-          <span className="dot" />
-          <span className="muted">{updatedAt ? `atualizado ${ago(updatedAt.toISOString())}` : 'carregando…'}</span>
+          <span className={`dot${live ? ' livedot' : ''}`} />
+          <span className="muted">
+            {live ? '● ao vivo · ' : ''}
+            {updatedAt ? `atualizado ${ago(updatedAt.toISOString())}` : 'carregando…'}
+          </span>
         </div>
       </div>
 
@@ -168,7 +192,34 @@ export default function Page() {
         ))
       )}
 
-      <h2>Atividade recente (devops-hub)</h2>
+      <h2>Pull Requests abertos (devops-hub)</h2>
+      <div className="feed">
+        {prs.length === 0 ? (
+          <p className="empty">Nenhum PR aberto.</p>
+        ) : (
+          prs.map((pr) => (
+            <div className="item" key={pr.number}>
+              <div className="l">
+                <span className={`pill ${pr.isPipeline ? 'in_progress' : 'unknown'}`}>
+                  {pr.isPipeline ? 'pipeline' : 'PR'}
+                </span>
+                <span className="ti">
+                  <a href={pr.url} target="_blank" rel="noreferrer">
+                    {pr.title} #{pr.number}
+                  </a>{' '}
+                  <span className="at">
+                    · {pr.branch} · @{pr.author}
+                    {pr.draft && ' · draft'}
+                  </span>
+                </span>
+              </div>
+              <span className="at">{ago(pr.createdAt)}</span>
+            </div>
+          ))
+        )}
+      </div>
+
+      <h2>Atividade recente (devops-hub){live && <span className="livetag"> ● ao vivo</span>}</h2>
       <div className="feed">
         {runs.length === 0 ? (
           <p className="empty">Nenhum run recente.</p>

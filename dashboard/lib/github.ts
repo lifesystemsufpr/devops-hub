@@ -189,6 +189,44 @@ export async function recentRuns(ok: Octokit, perPage = 10): Promise<PipelineRun
   }
 }
 
+export interface PullRequest {
+  number: number;
+  title: string;
+  url: string;
+  branch: string;
+  author: string;
+  draft: boolean;
+  createdAt: string;
+  isPipeline: boolean; // PR gerado pelo pipeline (branch feat/demo-*)
+}
+
+/** PRs abertos no devops-hub — os do pipeline (feat/demo-*) vêm primeiro. */
+export async function recentPRs(ok: Octokit, perPage = 15): Promise<PullRequest[]> {
+  try {
+    const res = await ok.pulls.list({
+      owner: ORG,
+      repo: PIPELINE_REPO,
+      state: 'open',
+      per_page: perPage,
+      sort: 'created',
+      direction: 'desc',
+    });
+    const prs = res.data.map((pr) => ({
+      number: pr.number,
+      title: pr.title,
+      url: pr.html_url,
+      branch: pr.head.ref,
+      author: pr.user?.login ?? '—',
+      draft: pr.draft ?? false,
+      createdAt: pr.created_at,
+      isPipeline: pr.head.ref.startsWith('feat/demo-'),
+    }));
+    return prs.sort((a, b) => Number(b.isPipeline) - Number(a.isPipeline));
+  } catch {
+    return [];
+  }
+}
+
 export async function dispatchPipeline(ok: Octokit, spec: string): Promise<void> {
   await ok.actions.createWorkflowDispatch({
     owner: ORG,
