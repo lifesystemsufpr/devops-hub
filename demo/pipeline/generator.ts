@@ -31,6 +31,17 @@ export interface GeneratedFile {
   content: string;
 }
 
+/**
+ * Áreas de risco que disparam o guard-rail de saúde (regra 80-healthcare-domain):
+ * o pipeline NÃO gera nem faz merge automático — exige revisão humana.
+ */
+export const SENSITIVE_AREAS = new Set(['clinical', 'auth', 'schema']);
+
+/** Predicado puro do guard-rail — testável isoladamente. */
+export function isSensitiveArea(area: string): boolean {
+  return SENSITIVE_AREAS.has(area);
+}
+
 export function parseSpec(path: string): Spec {
   const raw = readFileSync(path, 'utf8');
   const m = raw.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);

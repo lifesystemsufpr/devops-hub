@@ -1,7 +1,7 @@
 import { execSync } from 'node:child_process';
 import { writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
-import { parseSpec, generate } from './generator.js';
+import { parseSpec, generate, isSensitiveArea } from './generator.js';
 
 /**
  * Orquestrador do pipeline: spec -> (geração mockada) -> validação -> PR -> CI.
@@ -18,7 +18,6 @@ import { parseSpec, generate } from './generator.js';
 const ROOT = process.cwd(); // .../devops-hub/demo
 const GITROOT = resolve(ROOT, '..'); // .../devops-hub
 const REPO = 'lifesystemsufpr/devops-hub';
-const SENSITIVE = new Set(['clinical', 'auth', 'schema']);
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -55,7 +54,7 @@ async function main(): Promise<void> {
   console.log(`Área de risco: ${spec.area}`);
 
   // 1. Guard-rail de saúde — automação por risco (regra 80-healthcare-domain)
-  if (SENSITIVE.has(spec.area)) {
+  if (isSensitiveArea(spec.area)) {
     console.log(`\n⛔ GUARD-RAIL: área "${spec.area}" é sensível (clínico/auth/schema).`);
     console.log('   O pipeline NÃO gera nem faz merge automático aqui — exige revisão humana.');
     console.log('   (CODEOWNERS força reviewer; o agente para e pede aprovação.)');
