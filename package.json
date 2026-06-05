@@ -10,7 +10,9 @@
     "protect": "tsx scripts/sync-branch-protection.ts",
     "protect:dry": "DRY_RUN=1 tsx scripts/sync-branch-protection.ts",
     "lint": "eslint scripts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:cov": "vitest run --coverage"
   },
   "dependencies": {
     "@octokit/rest": "^21.0.2"
@@ -21,7 +23,9 @@
     "eslint": "^9.16.0",
     "tsx": "^4.19.2",
     "typescript-eslint": "^8.18.0",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8",
+    "@vitest/coverage-v8": "^2.1.8"
   },
   "engines": {
     "node": ">=22"

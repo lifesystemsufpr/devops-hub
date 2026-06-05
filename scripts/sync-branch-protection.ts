@@ -14,6 +14,7 @@
 
 import { Octokit } from '@octokit/rest';
 import { REPOS, ORG, type RepoConfig } from './repos.config.js';
+import { validateRepos } from './config-utils.js';
 
 const TOKEN = process.env.GITHUB_TOKEN;
 const DRY_RUN = process.env.DRY_RUN === '1';
@@ -61,6 +62,14 @@ async function protect(repo: RepoConfig) {
 }
 
 async function main() {
+  // Pré-flight: falha cedo se a config estiver inválida (antes de tocar a API).
+  const problems = validateRepos(REPOS);
+  if (problems.length) {
+    console.error('❌ repos.config inválida:');
+    for (const p of problems) console.error(`  · ${p}`);
+    process.exit(1);
+  }
+
   console.log(`Aplicando branch protection em ${REPOS.length} repos @${ORG}`);
   if (DRY_RUN) console.log('🔬 DRY_RUN ativo\n');
 
