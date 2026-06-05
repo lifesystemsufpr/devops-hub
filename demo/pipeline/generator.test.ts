@@ -8,6 +8,8 @@ import {
   isSensitiveArea,
   SENSITIVE_AREAS,
   extractCodeBlock,
+  extractSection,
+  renderPrBody,
 } from './generator.js';
 
 // Spec de exemplo (área geral) usado em vários testes de parseSpec/generate.
@@ -138,5 +140,47 @@ describe('extractCodeBlock (parser de saída do claude)', () => {
 
   it('devolve null quando não há código', () => {
     expect(extractCodeBlock('desculpe, não consegui gerar')).toBeNull();
+  });
+});
+
+describe('extractSection', () => {
+  const body = '## Descrição\n\nbla bla.\n\n## Regras\n\n- regra A\n- regra B\n\n## Exemplos\n\n- x => 1\n';
+
+  it('extrai as linhas da seção pedida', () => {
+    expect(extractSection(body, 'Regras')).toEqual(['- regra A', '- regra B']);
+  });
+
+  it('é case-insensitive e para no próximo header', () => {
+    expect(extractSection(body, 'descrição')).toEqual(['bla bla.']);
+  });
+
+  it('devolve vazio quando a seção não existe', () => {
+    expect(extractSection(body, 'Inexistente')).toEqual([]);
+  });
+});
+
+describe('renderPrBody', () => {
+  it('inclui resumo, área, gerador, suposições e cobertura', () => {
+    const spec = parseSpec(specFile('pr.md', APPLY_DISCOUNT_SPEC));
+    const body = renderPrBody(spec, { generator: 'claude' });
+    expect(body).toContain('## Resumo');
+    expect(body).toContain('`apply-discount`');
+    expect(body).toContain('`general` ✅ geral');
+    expect(body).toContain('| Gerador | claude |');
+    expect(body).toContain('## Suposições');
+    expect(body).toContain('## Cobertura de testes');
+    // cobertura derivada dos exemplos
+    expect(body).toContain('`applyDiscount(100, 10)` → `90`');
+    expect(body).toContain('`applyDiscount(-1, 10)` → lança erro');
+    expect(body).toContain('3 caso(s)');
+  });
+
+  it('marca área sensível com ⛔', () => {
+    const clinico = parseSpec(
+      specFile('clin.md', `---\nid: c\ntitle: C\narea: clinical\nmodule: c\nexport: c\n---\n## Regras\n- r1\n`),
+    );
+    const body = renderPrBody(clinico, { generator: 'mock' });
+    expect(body).toContain('⛔ sensível');
+    expect(body).toContain('- r1');
   });
 });
