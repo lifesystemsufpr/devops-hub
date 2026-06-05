@@ -6,12 +6,24 @@ import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   {
-    ignores: ['node_modules', 'dist', 'coverage', '.next', 'dashboard', 'demo'],
+    // Dashboard tem lint próprio (next). Da demo, lintamos só o código autoral
+    // do pipeline; src/ (app gerado) e artefatos ficam de fora.
+    ignores: [
+      'node_modules',
+      'dist',
+      'coverage',
+      '.next',
+      'dashboard',
+      'demo/src',
+      'demo/node_modules',
+      'demo/coverage',
+      'demo/dist',
+    ],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    files: ['scripts/**/*.ts'],
+    files: ['scripts/**/*.ts', 'demo/pipeline/**/*.ts'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'module',
