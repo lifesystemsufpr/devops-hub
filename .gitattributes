@@ -1,0 +1,5 @@
+# Força LF nos arquivos de texto (evita CRLF quebrando parsers de frontmatter).
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.ico binary

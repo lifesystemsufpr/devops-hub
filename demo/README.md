@@ -60,7 +60,9 @@ testes derivados quebram e o pipeline falha.
 
 > Auth: o gerador `claude` usa a sessão já existente do CLI (`claude` na sua máquina)
 > — **sem API key nova**. No CI o `claude` não está instalado, então o modo efetivo é
-> `mock` (o CI valida o *pipeline*, não a geração por IA).
+> `mock` (o CI valida o *pipeline*, não a geração por IA). Sem auth, a chamada retorna
+> rápido (401) e o `auto` cai no mock. O timeout da chamada é configurável via
+> `CLAUDE_TIMEOUT_MS` (default 120000).
 
 ## Produção
 

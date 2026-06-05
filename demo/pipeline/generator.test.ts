@@ -10,6 +10,7 @@ import {
   extractCodeBlock,
   extractSection,
   renderPrBody,
+  resolveBackend,
 } from './generator.js';
 
 // Spec de exemplo (área geral) usado em vários testes de parseSpec/generate.
@@ -79,6 +80,13 @@ describe('parseSpec', () => {
   it('lança quando não há frontmatter', () => {
     expect(() => parseSpec(specFile('bad.md', 'sem frontmatter aqui'))).toThrow(/frontmatter/);
   });
+
+  it('tolera quebras de linha CRLF (checkout Windows)', () => {
+    const crlf = APPLY_DISCOUNT_SPEC.replace(/\n/g, '\r\n');
+    const spec = parseSpec(specFile('crlf.md', crlf));
+    expect(spec.id).toBe('apply-discount');
+    expect(spec.examples).toHaveLength(3);
+  });
 });
 
 describe('isSensitiveArea (guard-rail)', () => {
@@ -120,6 +128,21 @@ describe('generate', () => {
       specFile('unknown.md', `---\nid: nao-existe\ntitle: N\narea: general\nmodule: n\nexport: n\n---\n`),
     );
     expect(() => generate(spec, 'mock')).toThrow(/Sem template/);
+  });
+});
+
+describe('resolveBackend', () => {
+  it('mock sempre resolve mock', () => {
+    expect(resolveBackend('mock', true)).toBe('mock');
+    expect(resolveBackend('mock', false)).toBe('mock');
+  });
+  it('claude sempre resolve claude', () => {
+    expect(resolveBackend('claude', true)).toBe('claude');
+    expect(resolveBackend('claude', false)).toBe('claude');
+  });
+  it('auto segue a disponibilidade do claude', () => {
+    expect(resolveBackend('auto', true)).toBe('claude');
+    expect(resolveBackend('auto', false)).toBe('mock');
   });
 });
 
