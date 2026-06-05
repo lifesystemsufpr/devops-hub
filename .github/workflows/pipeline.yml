@@ -27,14 +27,14 @@ jobs:
       run:
         working-directory: demo
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
           # Usa o PAT (secret PIPELINE_TOKEN) se existir — necessário p/ abrir PR de
           # specs novos (a org bloqueia o GITHUB_TOKEN de criar PR). Cai no token
           # padrão se o secret não estiver configurado.
           token: ${{ secrets.PIPELINE_TOKEN || github.token }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: '22'
           cache: npm
