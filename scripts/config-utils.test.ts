@@ -104,4 +104,19 @@ describe('applyCiTemplate', () => {
     const out = applyCiTemplate(tpl, { coverageThreshold: 30, packageManager: 'npm', defaultBranch: 'main' });
     expect((out.match(/branches: \[main\]/g) ?? []).length).toBe(2);
   });
+
+  it('injeta setup-command no bloco with quando definido', () => {
+    const out = applyCiTemplate(tpl, {
+      coverageThreshold: 60,
+      packageManager: 'npm',
+      defaultBranch: 'main',
+      setupCommand: 'npx prisma generate',
+    });
+    expect(out).toContain("coverage-threshold: 60\n      setup-command: 'npx prisma generate'");
+  });
+
+  it('não injeta setup-command quando ausente', () => {
+    const out = applyCiTemplate(tpl, { coverageThreshold: 30, packageManager: 'npm', defaultBranch: 'main' });
+    expect(out).not.toContain('setup-command');
+  });
 });
