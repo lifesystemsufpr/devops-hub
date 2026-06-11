@@ -18,14 +18,15 @@
     "@octokit/rest": "^22.0.1"
   },
   "devDependencies": {
-    "@eslint/js": "^9.16.0",
-    "@types/node": "^22.10.0",
-    "@vitest/coverage-v8": "^2.1.8",
-    "eslint": "^9.16.0",
-    "tsx": "^4.19.2",
-    "typescript": "^5.7.2",
-    "typescript-eslint": "^8.18.0",
-    "vitest": "^2.1.8"
+    "@eslint/js": "^9.39.4",
+    "@types/node": "^25.9.3",
+    "@vitest/coverage-v8": "^4.1.8",
+    "eslint": "^9.39.4",
+    "tsx": "^4.22.4",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.60.1",
+    "vite": "^7",
+    "vitest": "^4.1.8"
   },
   "engines": {
     "node": ">=22"
