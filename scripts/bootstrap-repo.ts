@@ -34,6 +34,9 @@ const HUB_ROOT = resolve(__dirname, '..');
 const TOKEN = process.env.GITHUB_TOKEN;
 const DRY_RUN = process.env.DRY_RUN === '1';
 const BRANCH_NAME = process.env.BOOTSTRAP_BRANCH ?? 'chore/devops-hub-bootstrap';
+// Os times @lifesystemsufpr/core|devops ainda não existem na org; com SKIP_CODEOWNERS=1
+// o bootstrap não aplica o CODEOWNERS (review obrigatório fica p/ quando os times existirem).
+const SKIP_CODEOWNERS = process.env.SKIP_CODEOWNERS === '1';
 
 if (!TOKEN && !DRY_RUN) {
   console.error('❌ GITHUB_TOKEN não definido. Use DRY_RUN=1 pra testar sem token.');
@@ -198,6 +201,10 @@ async function processRepo(repo: RepoConfig) {
 
   // 2. Arquivos comuns
   for (const [src, dest] of Object.entries(COMMON_FILES)) {
+    if (SKIP_CODEOWNERS && dest.endsWith('CODEOWNERS')) {
+      console.log(`  · ${dest} — skip (SKIP_CODEOWNERS=1, times da org ainda não existem)`);
+      continue;
+    }
     const content = readTemplate(src);
     await upsertFile(
       repo.name,
