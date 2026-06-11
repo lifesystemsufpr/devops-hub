@@ -22,6 +22,10 @@ on:
       run-build:
         type: boolean
         default: true
+      allow-no-tests:
+        type: boolean
+        default: true
+        description: 'Fase de adoção: repo sem testes ainda passa (--passWithNoTests). Flipar p/ false quando o backfill chegar.'
     secrets:
       CODECOV_TOKEN:
         required: false
@@ -124,7 +128,9 @@ jobs:
       - run: ${{ inputs.package-manager }} install --frozen-lockfile
 
       - name: Run tests with coverage (if defined)
-        run: ${{ inputs.package-manager }} run test:cov --if-present
+        # --passWithNoTests (jest e vitest) evita vermelho em repo ainda sem testes;
+        # o gate de cobertura abaixo continua valendo quando houver relatório.
+        run: ${{ inputs.package-manager }} run test:cov --if-present ${{ inputs.allow-no-tests && '-- --passWithNoTests' || '' }}
         env:
           CI: true
 
