@@ -45,7 +45,8 @@ export const REPOS: RepoConfig[] = [
     coverageThreshold: 60, // crítico, threshold maior
     protectBranch: true,
     requiredReviews: 1,
-    requiredChecks: ['Lint', 'Typecheck', 'Unit tests', 'Build'],
+    // Nomes EXATOS do run real (PR #2): '<job-do-caller> / <job-da-reusable>'.
+    requiredChecks: ['ci / Lint', 'ci / Typecheck', 'ci / Unit tests', 'ci / Build'],
   },
   {
     name: 'tecnoaging-back',
@@ -55,6 +56,7 @@ export const REPOS: RepoConfig[] = [
     coverageThreshold: 50,
     protectBranch: true,
     requiredReviews: 1,
+    // TODO(bootstrap): reconciliar com o run real ('ci / <Job>') antes da branch protection.
     requiredChecks: ['Lint', 'Typecheck', 'Unit tests', 'Build'],
   },
   {
@@ -65,6 +67,7 @@ export const REPOS: RepoConfig[] = [
     coverageThreshold: 50,
     protectBranch: true,
     requiredReviews: 1,
+    // TODO(bootstrap): reconciliar com o run real ('ci / <Job>') antes da branch protection.
     requiredChecks: ['Lint', 'Typecheck', 'Unit tests', 'Build'],
   },
   {
@@ -75,6 +78,7 @@ export const REPOS: RepoConfig[] = [
     coverageThreshold: 40,
     protectBranch: true,
     requiredReviews: 1,
+    // TODO(bootstrap): reconciliar com o run real ('ci / <Job>') antes da branch protection.
     requiredChecks: ['Lint', 'Typecheck', 'Component + unit tests', 'Build'],
   },
   {
@@ -85,6 +89,7 @@ export const REPOS: RepoConfig[] = [
     coverageThreshold: 40,
     protectBranch: true,
     requiredReviews: 1,
+    // TODO(bootstrap): reconciliar com o run real ('ci / <Job>') antes da branch protection.
     requiredChecks: ['Lint', 'Typecheck', 'Component + unit tests', 'Build'],
   },
   {
@@ -95,6 +100,7 @@ export const REPOS: RepoConfig[] = [
     coverageThreshold: 30,
     protectBranch: true,
     requiredReviews: 1,
+    // TODO(bootstrap): reconciliar com o run real ('ci / <Job>') antes da branch protection.
     requiredChecks: ['Lint', 'Typecheck', 'Unit + component tests'],
   },
   {
@@ -104,6 +110,7 @@ export const REPOS: RepoConfig[] = [
     coverageThreshold: 30,
     protectBranch: true,
     requiredReviews: 1,
+    // TODO(bootstrap): reconciliar com o run real ('ci / <Job>') antes da branch protection.
     requiredChecks: ['ktlint + detekt', 'Unit tests (JUnit)', 'Assemble debug'],
   },
 ];
