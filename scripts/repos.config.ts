@@ -21,6 +21,8 @@ export interface RepoConfig {
   packageManager?: PackageManager;
   /** Path relativo do código dentro do repo, se for monorepo. */
   workingDirectory?: string;
+  /** Comando extra pós-install no CI (ex.: 'npx prisma generate'). */
+  setupCommand?: string;
   /** Threshold de cobertura inicial. */
   coverageThreshold: number;
   /** Aplicar branch protection no defaultBranch? */
@@ -39,6 +41,7 @@ export const REPOS: RepoConfig[] = [
     type: 'node-backend',
     defaultBranch: 'main',
     packageManager: 'npm',
+    setupCommand: 'npx prisma generate', // @prisma/client precisa do client gerado p/ build/lint
     coverageThreshold: 60, // crítico, threshold maior
     protectBranch: true,
     requiredReviews: 1,

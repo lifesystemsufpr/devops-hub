@@ -56,7 +56,7 @@ export function qualifiedCheck(callerJob: string, reusableJob: string): string {
  */
 export function applyCiTemplate(
   template: string,
-  repo: Pick<RepoConfig, 'coverageThreshold' | 'packageManager' | 'defaultBranch'>,
+  repo: Pick<RepoConfig, 'coverageThreshold' | 'packageManager' | 'defaultBranch' | 'setupCommand'>,
 ): string {
   let ci = template.replace(/coverage-threshold: \d+/, `coverage-threshold: ${repo.coverageThreshold}`);
   if (repo.packageManager) {
@@ -64,6 +64,13 @@ export function applyCiTemplate(
   }
   if (repo.defaultBranch !== 'main') {
     ci = ci.replace(/branches: \[main\]/g, `branches: [${repo.defaultBranch}]`);
+  }
+  if (repo.setupCommand) {
+    // injeta o setup-command logo após o coverage-threshold (mesmo bloco `with:`)
+    ci = ci.replace(
+      /(coverage-threshold: \d+)/,
+      `$1\n      setup-command: '${repo.setupCommand}'`,
+    );
   }
   return ci;
 }

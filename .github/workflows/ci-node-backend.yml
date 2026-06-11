@@ -26,6 +26,10 @@ on:
         type: boolean
         default: true
         description: 'Fase de adoção: repo sem testes ainda passa (--passWithNoTests). Flipar p/ false quando o backfill chegar.'
+      setup-command:
+        type: string
+        default: ''
+        description: 'Comando extra pós-install (ex.: npx prisma generate) — roda antes de lint/typecheck/test/build.'
     secrets:
       CODECOV_TOKEN:
         required: false
@@ -84,6 +88,9 @@ jobs:
           node-version: ${{ inputs.node-version }}
           cache: ${{ inputs.package-manager }}
       - run: ${{ inputs.package-manager }} install --frozen-lockfile
+      - name: Setup extra (se definido)
+        if: inputs.setup-command != ''
+        run: ${{ inputs.setup-command }}
       - name: Run ESLint (if defined)
         run: ${{ inputs.package-manager }} run lint --if-present
 
@@ -105,6 +112,9 @@ jobs:
           node-version: ${{ inputs.node-version }}
           cache: ${{ inputs.package-manager }}
       - run: ${{ inputs.package-manager }} install --frozen-lockfile
+      - name: Setup extra (se definido)
+        if: inputs.setup-command != ''
+        run: ${{ inputs.setup-command }}
       - name: Run typecheck (if defined)
         run: ${{ inputs.package-manager }} run typecheck --if-present
 
@@ -126,6 +136,9 @@ jobs:
           node-version: ${{ inputs.node-version }}
           cache: ${{ inputs.package-manager }}
       - run: ${{ inputs.package-manager }} install --frozen-lockfile
+      - name: Setup extra (se definido)
+        if: inputs.setup-command != ''
+        run: ${{ inputs.setup-command }}
 
       - name: Run tests with coverage (if defined)
         # --passWithNoTests (jest e vitest) evita vermelho em repo ainda sem testes;
@@ -185,4 +198,7 @@ jobs:
           node-version: ${{ inputs.node-version }}
           cache: ${{ inputs.package-manager }}
       - run: ${{ inputs.package-manager }} install --frozen-lockfile
+      - name: Setup extra (se definido)
+        if: inputs.setup-command != ''
+        run: ${{ inputs.setup-command }}
       - run: ${{ inputs.package-manager }} run build --if-present
